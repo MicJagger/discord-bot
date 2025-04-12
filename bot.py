@@ -56,12 +56,16 @@ async def leave(ctx):
         return False
 
 @bot.command()
-async def pause(ctx):
-    await ctx.send("pause")
-
-@bot.command()
 async def next(ctx):
     await skip(ctx)
+
+@bot.command()
+async def pause(ctx):
+    if ctx.voice_client and ctx.voice_client.is_playing():
+        ctx.voice_client.pause()
+        await ctx.send("paused")
+    else:
+        await ctx.send("can't pause what isn't playing")
 
 @bot.command()
 async def play(ctx, *, query="null"):
@@ -96,21 +100,40 @@ async def play(ctx, *, query="null"):
 
 @bot.command()
 async def queue(ctx):
-    for video in linkQueue:
-        await ctx.send(linkQueue[video])
+    if linkQueue:
+        queueText = "queue:\n"
+        i = 1
+        for video in linkQueue:
+            queueText += str(i) + ". " + video[1] + "\n"
+            i += 1
+        await ctx.send(queueText)
+    else:
+        await ctx.send("queue empty")
 
 @bot.command()
 async def resume(ctx):
-    await ctx.send("resume")
+    if ctx.voice_client and ctx.voice_client.is_paused():
+        ctx.voice_client.resume()
+        await ctx.send("resumed")
+    else:
+        await ctx.send("can't resume what isn't paused")
 
 @bot.command()
 async def skip(ctx):
-    await ctx.send("skipping")
-    checkNext(ctx.voice_client)
+    if ctx.voice_client and ctx.voice_client.is_playing():
+        ctx.voice_client.stop()
+        await ctx.send("skipping")
+    else:
+        await ctx.send("can't skip what isn't playing")
 
 @bot.command()
 async def stop(ctx):
-    await ctx.send("stop")
+    if ctx.voice_client:
+        ctx.voice_client.stop()
+        linkQueue.clear()
+        await ctx.send("stopped everything")
+    else:
+        await ctx.send("nothing to stop")
 
 @bot.command()
 async def unpause(ctx):
