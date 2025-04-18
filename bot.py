@@ -21,7 +21,7 @@ intents=discord.Intents.default()
 bot = commands.Bot(command_prefix="!", intents=intents) # , help_command=None
 intents.message_content = True
 
-# (url, title)
+# (url, title, context)
 linkQueue = []
 
 
@@ -29,7 +29,8 @@ linkQueue = []
 
 @bot.command()
 async def clear(ctx):
-    await ctx.send("clear")
+    linkQueue.clear()
+    await ctx.send("cleared queue")
 
 # @bot.command()
 # async def help(ctx):
@@ -95,7 +96,7 @@ async def play(ctx, *, query="null"):
         await ctx.send(f"playing: {title}")
         playVideo(ctx.voice_client, url)
     else:
-        linkQueue.append((url, title))
+        linkQueue.append((url, title, ctx))
         await ctx.send(f"queued: {title}")
 
 @bot.command()
@@ -144,9 +145,9 @@ async def unpause(ctx):
 
 def checkNext(voice_client):
     if linkQueue:
-        song_url, song_title = linkQueue.pop(0)
+        song_url, song_title, context = linkQueue.pop(0)
         playVideo(voice_client, song_url)
-        asyncio.run_coroutine_threadsafe(voice_client.channel.send(f"playing: {song_title}"), bot.loop)
+        asyncio.run_coroutine_threadsafe(context.send(f"playing: {song_title}"), bot.loop)
 
 def getInfo(url):
     ydl_opts = {
